@@ -57,6 +57,7 @@ class ProcController(QObject):
       self.proc = subprocess.Popen(
         cmd,
         cwd=app_dir(),
+        stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         bufsize=1,
@@ -74,6 +75,21 @@ class ProcController(QObject):
     self._stop_reader.clear()
     self.reader_thread = threading.Thread(target=self._read_output_loop, daemon=True)
     self.reader_thread.start()
+
+  def send_line(self, text: str) -> bool:
+    if not self.is_running():
+      self.status_signal.emit("Process is not running.")
+      return False
+    try:
+      if self.proc.stdin is None:
+        self.status_signal.emit("stdin is not open.")
+        return False
+      self.proc.stdin.write(text + "\n")
+      self.proc.stdin.flush()
+      return True
+    except Exception as e:
+      self.status_signal.emit(f"Failed to send: {e}")
+      return False
 
   def _read_output_loop(self):
     if not self.proc or not self.proc.stdout:
@@ -101,7 +117,7 @@ class ProcController(QObject):
         subprocess.run(
           ["taskkill", "/PID", str(self.proc.pid), "/T"],
           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-          creationflags=0x08000000,
+          creationflags=0x08000000
         )
         self.status_signal.emit("taskkill /T executed.")
       except Exception as e:
@@ -112,7 +128,8 @@ class ProcController(QObject):
       try:
         subprocess.run(
           ["taskkill", "/PID", str(self.proc.pid), "/T", "/F"],
-          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+          creationflags=0x08000000
         )
         self.status_signal.emit("taskkill /T /F executed.")
       except Exception as e:
@@ -120,6 +137,7 @@ class ProcController(QObject):
 
   def restart_proc(self, timeout=3.0):
     if not self.is_running():
+      self.restart_signal.emit()
       return
 
     self.soft_terminate()
@@ -130,6 +148,7 @@ class ProcController(QObject):
 
   def exit_proc(self, timeout=3.0):
     if not self.is_running():
+      self.exit_signal.emit()
       return
 
     self.soft_terminate()

@@ -46,7 +46,14 @@ class Runner:
     self.proc.exit_signal.connect(self.exit_app)
     self.proc.restart_signal.connect(self.start_fixed_bat)
 
+    self.log_win.send_clicked.connect(self._send_to_child)
+
     QTimer.singleShot(0, self.start_fixed_bat)
+
+  def _send_to_child(self, line: str):
+    ok = self.proc.send_line(line)
+    if not ok:
+      self.log_win.append("[WARN] Cannot send command, process is not running or stdin is closed.")
 
   def on_tray_activated(self, reason: QSystemTrayIcon.ActivationReason):
     if reason == QSystemTrayIcon.Trigger:
@@ -63,6 +70,7 @@ class Runner:
   def start_fixed_bat(self):
     self.log_win.append(f"[INFO] Launched: {fixed_bat_path()}")
     self.proc.start(fixed_bat_path())
+    self.log_win.set_input_enabled(True)
 
   def restart_proc(self):
     self.log_win.append("[INFO] Restarting process...")
