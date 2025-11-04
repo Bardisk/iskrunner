@@ -27,7 +27,7 @@ class Runner:
     self.act_exit = QAction("Exit")
     self.act_show.triggered.connect(self.toggle_log)
     self.act_restart.triggered.connect(self.restart_proc)
-    self.act_exit.triggered.connect(self.exit_app)
+    self.act_exit.triggered.connect(self.exit_proc)
     self.menu.addAction(self.act_show)
     self.menu.addAction(self.act_restart)
     self.menu.addSeparator()
@@ -43,6 +43,8 @@ class Runner:
     self.proc = ProcController()
     self.proc.line_signal.connect(self.log_win.append)
     self.proc.status_signal.connect(self.on_status)
+    self.proc.exit_signal.connect(self.exit_app)
+    self.proc.restart_signal.connect(self.start_fixed_bat)
 
     QTimer.singleShot(0, self.start_fixed_bat)
 
@@ -63,17 +65,17 @@ class Runner:
     self.proc.start(fixed_bat_path())
 
   def restart_proc(self):
-    self.log_win.append("[INFO] Terminating process...")
-    self.proc.terminate_tree(timeout=2.0)
-    self.log_win.append(f"[INFO] Restarting: {fixed_bat_path()}")
-    self.proc.start(fixed_bat_path())
+    self.log_win.append("[INFO] Restarting process...")
+    self.proc.restart_proc(timeout=5)
 
   def on_status(self, msg: str):
     self.log_win.append(f"[STATUS] {msg}")
 
-  def exit_app(self):
+  def exit_proc(self):
     self.log_win.append("[INFO] Exiting application, terminating subprocess...")
-    self.proc.terminate_tree(timeout=0.1)
+    self.proc.exit_proc(timeout=5)
+
+  def exit_app(self):
     QSystemTrayIcon.hide(self.tray)
     QApplication.quit()
 
