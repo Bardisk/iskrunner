@@ -1,0 +1,1 @@
+pyinstaller --onefile --noconsole --icon cocolis.ico --add-data "cocolis.ico;." --add-data "iskr.bat;." main.py

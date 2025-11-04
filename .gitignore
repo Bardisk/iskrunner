@@ -1,0 +1,14 @@
+*
+*.*
+
+!.gitignore
+
+# source files
+!*.py
+
+# resources
+!cocolis.ico
+!iskr.bat
+
+!environment.yaml
+!deploy.bat
